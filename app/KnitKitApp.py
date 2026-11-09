@@ -13,6 +13,8 @@ from PyQt6 import QtWidgets
 from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QStatusBar, QToolBar
 
 sys.path.append("../../frameworks/_pyqt/framework")
+sys.path.append("../src")
+sys.path.append("../dev")
 
 from layout_objects import Window, ImageWindow
 from knitkit import KnitKit
