@@ -136,8 +136,33 @@ class KnitKit(ImageWindow):
 		else:
 			image_q = self._getImageDataFromViewer()
 			image_pil = self._qImage2Pil(image_q)
-			# apply pillow conversions here
-			print("image converted to pillow type successfully !") # <- gay
+
+
+			# APPLY IMAGE CONVERSIONS HERE
+			image = np.array(image_pil)
+			img_hc, img_wc = self._getImageCenter(image)
+						
+			new_image = np.random.uniform(low=0.0, high=255.0, size = image.shape)
+			print(new_image.shape)
+			# Convert to QImage
+			qim = QImage(new_image.data, new_image.shape[1], new_image.shape[0], new_image.strides[0], QImage.Format.Format_RGBA8888)
+
+			# Convert to Pixmap
+			# print(type(qim))
+			pix_im = QPixmap(qim)
+
+			# reload canvas with new pixmap
+			self._reload_canvas(pix_im)
+				
+
+			# image 	
+			
+			print(f' Converted image to : type(image) with shape: {image.shape}')
+			
+
+	def _getImageCenter(self, arr: np.ndarray):
+		height, width, _ = arr.shape
+		return float(height // 2), float(width // 2)
 
 
 	def _getImageDataFromViewer(self):
