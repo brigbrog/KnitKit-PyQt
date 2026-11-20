@@ -124,41 +124,113 @@ class KnitKit(ImageWindow):
 		return export_button
 
 
-# TRANSFORMERS :
+# ACTIONS :
 # ------------------------------------------------------------------------------------------------
 
 
-	def _convertImage(self):
+	def _loadImage(self):
+		'''
+		add multi channel support
+		'''
+		self.statusBar().showMessage("SELECT IMAGE")
+		fpath, _ = QFileDialog.getOpenFileName(
+				self, "Select Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp)"
+			)
+		if not fpath:
+			return
 
+		image_pil = Image.open(fpath)
+		image_pil = image_pil.convert("L")
+
+		im_data = image_pil.tobytes("raw", "L")
+		qimage = QImage(
+			im_data, 
+			image_pil.width,
+			image_pil.height, 
+			image_pil.width, 
+			QImage.Format.Format_Grayscale8
+		)
+
+		pixmap = QPixmap.fromImage(qimage)
+		self._reload_canvas(pixmap)
+		self.statusBar().showMessage("IMAGE LOADED")
+
+
+	def _exportImage(self):
+
+		# check if scene is void
 		if not self.scene:
-			print("VOID SCENE") # <----------------------- SEND TO STATUS
+			self.statusBar().showMessage("VOID SCENE")
+			return None
+		
+		# prompt to select save path
+		self.statusBar().showMessage("SELECT SAVE")
+		fpath, _ = QFileDialog.getSaveFileName(
+				self, "Select Save Location", "", "PNG Files (*.png)"
+			)
+		if not fpath:
+			return
+
+		image_q = self._getImageDataFromViewer()
+		image_pil = self._qImage2Pil(image_q)
+
+		image_pil.save(fpath, "PNG")
+		self.statusBar().showMessage(f"IMAGE SAVED TO {fpath}")
+
+
+	def _convertImage(self):
+		'''
+		Converts the current image in <self.GraphicsView> with the HARD-CODED transformation. After converting the 
+		canvas is reloaded. The original image is not preserved. If canvas is empty, returns None
+
+		Params:
+			None
+		Returns:
+			None
+		
+		'''
+		if not self.scene:
+			self.statusBar().showMessage("VOID SCENE")
 			return None
 		else:
 			image_q = self._getImageDataFromViewer()
 			image_pil = self._qImage2Pil(image_q)
-
-
-			# APPLY IMAGE CONVERSIONS HERE
 			image = np.array(image_pil)
-			img_hc, img_wc = self._getImageCenter(image)
-						
-			new_image = np.random.uniform(low=0.0, high=255.0, size = image.shape)
-			print(new_image.shape)
-			# Convert to QImage
-			qim = QImage(new_image.data, new_image.shape[1], new_image.shape[0], new_image.strides[0], QImage.Format.Format_RGBA8888)
 
-			# Convert to Pixmap
-			# print(type(qim))
-			pix_im = QPixmap(qim)
+			# transform
+			new_image = self.scramble(image)
 
-			# reload canvas with new pixmap
+
+
+			# QImage
+			qimage = self._ndarray2QImage(new_image)
+			pix_im = QPixmap(qimage)
+
+			# RELOAD
 			self._reload_canvas(pix_im)
-				
+			self.statusBar().showMessage("SCRAMBLED !!!")
 
-			# image 	
-			
-			print(f' Converted image to : type(image) with shape: {image.shape}')
-			
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	def scramble(self, image):
+		img_hc, img_wc = self._getImageCenter(image)
+		new_image = np.random.uniform(low=0.0, high=255.0, size = image.shape)
+		return new_image
+
 
 	def _getImageCenter(self, arr: np.ndarray):
 		height, width, _ = arr.shape
@@ -173,7 +245,6 @@ class KnitKit(ImageWindow):
 				break
 
 		if not pixmap_item:
-			print("VOID SCENE") # <----------------------- SEND TO STATUS
 			return None
 
 		pixmap = pixmap_item.pixmap()
@@ -202,54 +273,16 @@ class KnitKit(ImageWindow):
 
 			return arr
 
-	# def _pil2QImage(self, pilimage: Image):
+	def _ndarray2QImage(self, image: np.ndarray):
+		qimage = QImage(image.data, 
+						image.shape[1],
+						image.shape[0],
+						image.strides[0],
+						QImage.Format.Format_RGBA8888)
+
+		return qimage
 
 
-# FILE I / O :
-# ------------------------------------------------------------------------------------------------
-
-
-	def _loadImage(self):
-		'''
-		add multi channel support
-		'''
-		fpath, _ = QFileDialog.getOpenFileName(
-				self, "Select Image", "", "Image Files (*.png *.jpg *.jpeg *.bmp)"
-			)
-		if not fpath:
-			return
-
-		image_pil = Image.open(fpath)
-		image_pil = image_pil.convert("L")
-
-		im_data = image_pil.tobytes("raw", "L")
-		qimage = QImage(
-			im_data, 
-			image_pil.width,
-			image_pil.height, 
-			image_pil.width, 
-			QImage.Format.Format_Grayscale8
-		)
-
-		pixmap = QPixmap.fromImage(qimage)
-		self._reload_canvas(pixmap)
-
-	def _exportImage(self):
-
-		if not self.scene:
-			print("VOID SCENE") # <----------------------- SEND TO STATUS
-			return None
-		
-		fpath, _ = QFileDialog.getSaveFileName(
-				self, "Select Save Location", "", "PNG Files (*.png)"
-			)
-		if not fpath:
-			return
-
-		image_q = self._getImageDataFromViewer()
-		image_pil = self._qImage2Pil(image_q)
-
-		image_pil.save(fpath, "PNG")
 
 
 
